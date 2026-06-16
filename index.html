@@ -252,7 +252,23 @@ button{-webkit-tap-highlight-color:rgba(24,95,165,.15);touch-action:manipulation
     </div>
 
     <div id="tab-products" style="display:none;">
-      <button class="btn-primary" onclick="openProductForm()">＋ 商品を追加</button>
+      <div class="card">
+        <p class="card-label">商品を追加</p>
+        <input type="text" id="pq-name" class="form-input" placeholder="商品名 *" style="margin-bottom:8px;" />
+        <select id="pq-vendor" class="form-input" style="margin-bottom:8px;"></select>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <div class="yen-wrap" style="flex:1;"><input type="number" id="pq-cost" class="form-input" placeholder="仕入値" min="0" /></div>
+          <div class="yen-wrap" style="flex:1;"><input type="number" id="pq-sell" class="form-input" placeholder="売値" min="0" /></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <input type="number" id="pq-stock" class="form-input" placeholder="在庫数" min="0" value="0" style="flex:1;" />
+          <input type="number" id="pq-minstock" class="form-input" placeholder="最低在庫数" min="0" value="0" style="flex:1;" />
+        </div>
+        <input type="date" id="pq-expiry" class="form-input" style="margin-bottom:8px;" />
+        <p class="error-msg" id="pq-error"></p>
+        <button class="btn-primary" onclick="quickAddProduct()">＋ この内容で追加する</button>
+      </div>
+      <div class="section-head">商品一覧</div>
       <div id="product-list"></div>
     </div>
 
@@ -624,6 +640,10 @@ function renderDashboard(){
 // ===== 商品管理 =====
 function renderProducts(){
   const vMap={}; vendors.forEach(v=>vMap[v.id]=v.name);
+  const pqVendor = document.getElementById('pq-vendor');
+  const curPq = pqVendor.value;
+  pqVendor.innerHTML = '<option value="">仕入先業者（未設定）</option>' + vendors.map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join('');
+  pqVendor.value = curPq;
   const now=todayStr();
   const warnD=new Date(); warnD.setDate(warnD.getDate()+30);
   const warnStr=warnD.toISOString().slice(0,10);
@@ -666,33 +686,49 @@ function viewProductPhoto(productId, idx){
   document.body.appendChild(overlay);
 }
 
+function quickAddProduct(){
+  const name = document.getElementById('pq-name').value.trim();
+  const err = document.getElementById('pq-error');
+  if(!name){ err.textContent='商品名を入力してください'; return; }
+  err.textContent='';
+  const obj = {
+    name,
+    vendorId: document.getElementById('pq-vendor').value,
+    costPrice: parseInt(document.getElementById('pq-cost').value)||0,
+    sellPrice: parseInt(document.getElementById('pq-sell').value)||0,
+    stock: parseInt(document.getElementById('pq-stock').value)||0,
+    minStock: parseInt(document.getElementById('pq-minstock').value)||0,
+    expiry: document.getElementById('pq-expiry').value,
+    photos: []
+  };
+  products.push({ id: uid('p'), ...obj });
+  saveProducts();
+  document.getElementById('pq-name').value='';
+  document.getElementById('pq-vendor').value='';
+  document.getElementById('pq-cost').value='';
+  document.getElementById('pq-sell').value='';
+  document.getElementById('pq-stock').value='0';
+  document.getElementById('pq-minstock').value='0';
+  document.getElementById('pq-expiry').value='';
+  renderProducts();
+}
+
 function openProductForm(id){
-  editingProductId = id||null;
-  document.getElementById('product-form-title').textContent = id?'商品を編集':'商品を追加';
+  editingProductId = id;
+  document.getElementById('product-form-title').textContent = '商品を編集';
   document.getElementById('pf-error').textContent='';
   const vSel = document.getElementById('pf-vendor');
   vSel.innerHTML = '<option value="">未設定</option>' + vendors.map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join('');
-  if(id){
-    const p = products.find(x=>x.id===id);
-    if(p){
-      document.getElementById('pf-name').value = p.name||'';
-      vSel.value = p.vendorId||'';
-      document.getElementById('pf-cost').value = p.costPrice||'';
-      document.getElementById('pf-sell').value = p.sellPrice||'';
-      document.getElementById('pf-stock').value = p.stock||0;
-      document.getElementById('pf-minstock').value = p.minStock||0;
-      document.getElementById('pf-expiry').value = p.expiry||'';
-      setProductPhotos(p.photos||[]);
-    }
-  } else {
-    document.getElementById('pf-name').value='';
-    vSel.value='';
-    document.getElementById('pf-cost').value='';
-    document.getElementById('pf-sell').value='';
-    document.getElementById('pf-stock').value=0;
-    document.getElementById('pf-minstock').value=0;
-    document.getElementById('pf-expiry').value='';
-    setProductPhotos([]);
+  const p = products.find(x=>x.id===id);
+  if(p){
+    document.getElementById('pf-name').value = p.name||'';
+    vSel.value = p.vendorId||'';
+    document.getElementById('pf-cost').value = p.costPrice||'';
+    document.getElementById('pf-sell').value = p.sellPrice||'';
+    document.getElementById('pf-stock').value = p.stock||0;
+    document.getElementById('pf-minstock').value = p.minStock||0;
+    document.getElementById('pf-expiry').value = p.expiry||'';
+    setProductPhotos(p.photos||[]);
   }
   document.getElementById('product-form-screen').style.display='block';
   window.scrollTo(0,0);
@@ -714,12 +750,8 @@ function saveProduct(){
     expiry: document.getElementById('pf-expiry').value,
     photos: [...currentProductPhotos]
   };
-  if(editingProductId){
-    const i = products.findIndex(x=>x.id===editingProductId);
-    if(i>=0) products[i] = {...products[i], ...obj};
-  } else {
-    products.push({ id: uid('p'), ...obj });
-  }
+  const i = products.findIndex(x=>x.id===editingProductId);
+  if(i>=0) products[i] = {...products[i], ...obj};
   saveProducts();
   closeProductForm();
 }
