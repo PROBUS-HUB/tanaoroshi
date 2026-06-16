@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="棚卸し管理">
+<title>棚卸し管理台帳</title>
+<style>
+:root {
+  --blue:      #185FA5;
+  --blue-dark: #0C447C;
+  --blue-lt:   #B5D4F4;
+  --blue-pale: #E6F1FB;
+  --green:     #639922;
+  --green-lt:  #EAF3DE;
+  --green-dk:  #3B6D11;
+  --orange:    #BA7517;
+  --orange-lt: #FAEEDA;
+  --red:       #E24B4A;
+  --red-lt:    #FCEBEB;
+  --text:      #1a1a2e;
+  --text2:     #555566;
+  --text3:     #999aaa;
+  --bg:        #f0f4fa;
+  --card:      #ffffff;
+  --border:    #c8d8ee;
+  --radius:    14px;
+  --radius-sm: 8px;
+  --shadow:    0 2px 0 0 #b0c8e8;
+  --shadow-card: 0 3px 0 0 #b0c8e8;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:72px;}
+.wrap{max-width:480px;margin:0 auto;padding:12px 14px;}
+html,body{-webkit-overflow-scrolling:touch;overflow-x:hidden;}
+input,textarea,select{font-size:16px!important;-webkit-appearance:none;}
+button{-webkit-tap-highlight-color:rgba(24,95,165,.15);touch-action:manipulation;cursor:pointer;}
+
+/* ヘッダー */
+.header{display:flex;align-items:center;justify-content:space-between;background:var(--blue);padding:12px 16px;position:sticky;top:0;z-index:100;box-shadow:0 3px 0 0 var(--blue-dark);}
+.header-title{font-size:15px;font-weight:700;color:#fff;letter-spacing:.03em;}
+.header-right{display:flex;align-items:center;gap:8px;}
+.header-date{font-size:11px;color:var(--blue-pale);}
+.btn-header{width:34px;height:34px;border-radius:var(--radius-sm);background:rgba(255,255,255,.18);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;}
+
+/* ボトムナビ */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:2px solid var(--blue-lt);display:grid;grid-template-columns:repeat(4,1fr);z-index:200;max-width:480px;margin:0 auto;box-shadow:0 -2px 0 0 var(--blue-lt);}
+.nav-item{display:flex;flex-direction:column;align-items:center;padding:7px 2px 8px;gap:2px;cursor:pointer;border:none;background:none;}
+.nav-icon{font-size:20px;color:var(--text3);}
+.nav-label{font-size:9px;color:var(--text3);font-weight:500;}
+.nav-item.active .nav-icon{color:var(--blue);}
+.nav-item.active .nav-label{color:var(--blue);}
+
+/* 統計カード */
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:12px 0 10px;}
+.stat-card{background:var(--card);border-radius:var(--radius-sm);border:2px solid var(--blue-lt);padding:12px 10px;box-shadow:var(--shadow);}
+.stat-label{font-size:11px;color:var(--text3);margin-bottom:4px;}
+.stat-num{font-size:20px;font-weight:700;color:var(--blue);}
+.stat-num.warn{color:var(--red);}
+.stat-num.ok{color:var(--green);}
+
+/* カード */
+.card{background:var(--card);border-radius:var(--radius);border:2px solid var(--border);padding:14px;margin-bottom:10px;box-shadow:var(--shadow-card);}
+.card-label{font-size:11px;font-weight:700;color:var(--text3);margin-bottom:8px;letter-spacing:.05em;}
+.section-head{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.06em;margin:14px 0 6px;padding-left:4px;}
+
+/* アラート */
+.alert{border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;font-size:12px;line-height:1.6;border:2px solid;}
+.alert-warn{background:var(--orange-lt);color:#7a5800;border-color:#f0c080;}
+.alert-danger{background:var(--red-lt);color:#791F1F;border-color:#f5c6cb;}
+
+/* インプット */
+.form-input{width:100%;padding:12px 14px;font-size:15px;border:2px solid var(--border);border-radius:var(--radius-sm);outline:none;background:#f8fafc;color:var(--text);box-shadow:inset 0 1px 0 0 #e0ecf8;}
+.form-input:focus{border-color:var(--blue);background:#fff;}
+.yen-wrap{position:relative;}
+.yen-wrap::before{content:'¥';position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--text3);pointer-events:none;}
+.yen-wrap .form-input{padding-left:26px;}
+
+/* ボタン */
+.btn-primary{width:100%;padding:14px;font-size:15px;font-weight:700;background:var(--blue);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;margin-bottom:10px;box-shadow:0 4px 0 0 var(--blue-dark);}
+.btn-primary:active{transform:translateY(4px);box-shadow:none;}
+.btn-primary.green{background:var(--green-dk);box-shadow:0 4px 0 0 #27500A;}
+.btn-primary.red{background:var(--red);box-shadow:0 4px 0 0 #A32D2D;}
+.btn-edit{flex:1;padding:9px;font-size:12px;font-weight:700;background:#f0f4fa;color:var(--text2);border:2px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;box-shadow:var(--shadow);}
+.btn-edit:active{transform:translateY(2px);box-shadow:none;}
+.btn-del{flex:1;padding:9px;font-size:12px;font-weight:700;background:var(--red-lt);color:var(--red);border:2px solid #f5c6cb;border-radius:var(--radius-sm);cursor:pointer;box-shadow:0 2px 0 0 #e8a0a0;}
+.btn-del:active{transform:translateY(2px);box-shadow:none;}
+.row-btns{display:flex;gap:8px;margin-top:10px;}
+.error-msg{font-size:12px;color:var(--red);text-align:center;min-height:18px;margin-bottom:8px;}
+.success-msg{font-size:12px;color:var(--green-dk);text-align:center;min-height:18px;margin-bottom:8px;}
+.empty-msg{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px;line-height:1.7;}
+
+/* 種別ボタン */
+.type-btns{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.type-btn{padding:13px;font-size:14px;font-weight:700;border-radius:var(--radius-sm);cursor:pointer;border:2px solid var(--border);box-shadow:var(--shadow);background:#f0f4fa;color:var(--text3);}
+.type-btn:active{transform:translateY(2px);box-shadow:none;}
+.type-btn.active-in{background:var(--blue);color:#fff;border-color:var(--blue-dark);box-shadow:0 3px 0 0 var(--blue-dark);}
+.type-btn.active-out{background:var(--red);color:#fff;border-color:#A32D2D;box-shadow:0 3px 0 0 #A32D2D;}
+
+/* 商品・業者カード */
+.item-card{background:var(--card);border-radius:var(--radius);border:2px solid var(--blue-lt);border-left:5px solid var(--blue);padding:14px;margin-bottom:10px;box-shadow:var(--shadow-card);}
+.item-card.low{border-left:5px solid var(--red);}
+.item-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.item-name{font-size:15px;font-weight:700;}
+.item-sub{font-size:12px;color:var(--text3);}
+.item-stock{font-size:18px;font-weight:700;text-align:right;}
+.item-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;font-size:12px;color:var(--text2);margin:8px 0;}
+.tag{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;}
+.tag-low{background:var(--red-lt);color:var(--red);}
+
+/* 履歴行 */
+.log-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--blue-pale);}
+.log-row:last-child{border-bottom:none;}
+.log-name{font-size:13px;font-weight:700;}
+.log-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+.log-type{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;}
+.log-type.in{background:var(--blue-pale);color:var(--blue-dark);}
+.log-type.out{background:var(--red-lt);color:var(--red);}
+.log-qty{font-size:15px;font-weight:700;margin-top:2px;text-align:right;}
+
+/* フォーム画面 */
+.form-screen,.lock-overlay{display:none;}
+.form-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;position:sticky;top:0;z-index:100;margin-bottom:12px;}
+.fh-blue{background:var(--blue);box-shadow:0 3px 0 0 var(--blue-dark);}
+.fh-green{background:var(--green-dk);box-shadow:0 3px 0 0 #27500A;}
+.form-title{font-size:16px;font-weight:700;color:#fff;}
+.btn-back{font-size:13px;background:none;border:none;cursor:pointer;padding:4px 8px;color:rgba(255,255,255,.8);font-weight:500;}
+
+/* FAB */
+.fab{position:fixed;bottom:74px;right:16px;width:52px;height:52px;border-radius:50%;background:var(--blue);border:3px solid #fff;box-shadow:0 4px 0 0 var(--blue-dark);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:26px;color:#fff;z-index:201;}
+.fab:active{transform:translateY(3px);box-shadow:0 1px 0 0 var(--blue-dark);}
+
+/* ログイン・ロック画面 */
+.lock-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;}
+.lock-inner{width:100%;max-width:360px;text-align:center;}
+.lock-icon{font-size:48px;margin-bottom:10px;}
+.lock-title{font-size:20px;font-weight:700;color:var(--blue-dark);margin-bottom:4px;}
+.lock-desc{font-size:12px;color:var(--text3);margin-bottom:24px;line-height:1.7;}
+.lock-card{background:var(--card);border:2px solid var(--blue-lt);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow-card);text-align:left;}
+.lock-card .card-label{margin-bottom:6px;}
+.pw-wrap{position:relative;margin-bottom:12px;}
+.pw-toggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:18px;cursor:pointer;color:var(--text3);padding:4px;}
+
+/* 印刷用 */
+@media print{
+  .header,.bottom-nav,.fab{display:none!important;}
+}
+
+/* CSVテキストエリア */
+.csv-area{width:100%;height:140px;font-size:11px;font-family:monospace;border:2px solid var(--border);border-radius:var(--radius-sm);padding:8px;background:#f8fafc;color:var(--text);resize:none;}
+</style>
+</head>
+<body>
+
+<!-- ===== 初回セットアップ画面 ===== -->
+<div id="setup-screen" class="lock-screen" style="display:none;">
+  <div class="lock-inner">
+    <div class="lock-icon">📦</div>
+    <div class="lock-title">棚卸し管理台帳</div>
+    <div class="lock-desc">初めてのご利用です。ログイン用のIDとパスワードを設定してください。</div>
+    <div class="lock-card">
+      <p class="card-label">ユーザーID</p>
+      <input type="text" id="setup-uid" class="form-input" placeholder="例：tanaka" style="margin-bottom:12px;" />
+      <p class="card-label">パスワード</p>
+      <div class="pw-wrap">
+        <input type="password" id="setup-pw" class="form-input" placeholder="6文字以上で入力" />
+        <button class="pw-toggle" onclick="togglePw('setup-pw',this)">👁️</button>
+      </div>
+      <p class="card-label">パスワード（確認）</p>
+      <div class="pw-wrap">
+        <input type="password" id="setup-pw2" class="form-input" placeholder="もう一度入力" />
+        <button class="pw-toggle" onclick="togglePw('setup-pw2',this)">👁️</button>
+      </div>
+      <p class="error-msg" id="setup-error"></p>
+      <button class="btn-primary" onclick="doSetup()">この内容で設定する</button>
+    </div>
+    <p style="font-size:11px;color:var(--text3);margin-top:14px;line-height:1.7;">設定したID・パスワードはこの端末のブラウザに保存されます。忘れないようにメモしておいてください。</p>
+  </div>
+</div>
+
+<!-- ===== ログイン画面 ===== -->
+<div id="login-screen" class="lock-screen" style="display:none;">
+  <div class="lock-inner">
+    <div class="lock-icon">📦</div>
+    <div class="lock-title">棚卸し管理台帳</div>
+    <div class="lock-desc">IDとパスワードを入力してログインしてください</div>
+    <div class="lock-card">
+      <p class="card-label">ユーザーID</p>
+      <input type="text" id="login-uid" class="form-input" placeholder="ユーザーID" style="margin-bottom:12px;" onkeydown="if(event.key==='Enter')document.getElementById('login-pw').focus()" />
+      <p class="card-label">パスワード</p>
+      <div class="pw-wrap">
+        <input type="password" id="login-pw" class="form-input" placeholder="パスワード" onkeydown="if(event.key==='Enter')doLogin()" />
+        <button class="pw-toggle" onclick="togglePw('login-pw',this)">👁️</button>
+      </div>
+      <p class="error-msg" id="login-error"></p>
+      <button class="btn-primary" onclick="doLogin()">ログイン</button>
+      <button class="btn-edit" style="width:100%;" onclick="showResetConfirm()">IDまたはパスワードを忘れた場合</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== メイン画面 ===== -->
+<div id="main-screen" style="display:none;">
+  <div class="header">
+    <span class="header-title">📦 棚卸し管理台帳</span>
+    <div class="header-right">
+      <span class="header-date" id="header-date"></span>
+      <button class="btn-header" onclick="showDataModal()" title="データ管理">⚙️</button>
+      <button class="btn-header" onclick="doLogout()" title="ログアウト">🚪</button>
+    </div>
+  </div>
+  <div class="wrap">
+
+    <div id="tab-dashboard">
+      <div class="stats">
+        <div class="stat-card"><p class="stat-label">商品数</p><p class="stat-num" id="st-products">0</p></div>
+        <div class="stat-card"><p class="stat-label">在庫警告</p><p class="stat-num warn" id="st-low">0</p></div>
+        <div class="stat-card"><p class="stat-label">在庫仕入総額</p><p class="stat-num" id="st-costval" style="font-size:15px;">¥0</p></div>
+        <div class="stat-card"><p class="stat-label">在庫売価総額</p><p class="stat-num" id="st-sellval" style="font-size:15px;">¥0</p></div>
+      </div>
+      <div id="alert-area"></div>
+
+      <div class="section-head">在庫一覧</div>
+      <div class="card" id="stock-overview" style="padding:6px 14px;"></div>
+
+      <div class="section-head">集計レポート</div>
+      <div class="card">
+        <p class="card-label">期間を指定して集計</p>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <input type="date" id="rep-from" class="form-input" />
+          <input type="date" id="rep-to" class="form-input" />
+        </div>
+        <button class="btn-primary" style="margin-bottom:8px;" onclick="calcReport()">集計する</button>
+        <div id="report-result"></div>
+        <button class="btn-primary green" id="print-btn" style="display:none;" onclick="printReport()">🖨 印刷・PDFとして保存</button>
+      </div>
+    </div>
+
+    <div id="tab-products" style="display:none;">
+      <button class="btn-primary" onclick="openProductForm()">＋ 商品を追加</button>
+      <div id="product-list"></div>
+    </div>
+
+    <div id="tab-stock" style="display:none;">
+      <div class="card">
+        <p class="card-label">入出庫を記録</p>
+        <select id="sk-product" class="form-input" style="margin-bottom:8px;"></select>
+        <div class="type-btns" style="margin-bottom:8px;">
+          <button class="type-btn" id="sk-in-btn" onclick="setStockType('in')">入庫</button>
+          <button class="type-btn" id="sk-out-btn" onclick="setStockType('out')">出庫</button>
+        </div>
+        <input type="number" id="sk-qty" class="form-input" placeholder="数量を入力" min="1" style="margin-bottom:8px;" />
+        <input type="date" id="sk-date" class="form-input" style="margin-bottom:8px;" />
+        <input type="text" id="sk-memo" class="form-input" placeholder="メモ（任意）" style="margin-bottom:8px;" />
+        <p class="error-msg" id="sk-error"></p>
+        <button class="btn-primary" onclick="recordStock()">記録する</button>
+      </div>
+      <div class="section-head">入出庫履歴</div>
+      <div class="card" id="stock-history" style="padding:6px 14px;"></div>
+    </div>
+
+    <div id="tab-vendors" style="display:none;">
+      <button class="btn-primary" onclick="openVendorForm()">＋ 業者を追加</button>
+      <div id="vendor-list"></div>
+    </div>
+
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-item active" id="nav-dashboard" onclick="switchTab('dashboard')"><span class="nav-icon">📊</span><span class="nav-label">ダッシュボード</span></button>
+    <button class="nav-item" id="nav-products" onclick="switchTab('products')"><span class="nav-icon">📦</span><span class="nav-label">商品管理</span></button>
+    <button class="nav-item" id="nav-stock" onclick="switchTab('stock')"><span class="nav-icon">🔄</span><span class="nav-label">入出庫</span></button>
+    <button class="nav-item" id="nav-vendors" onclick="switchTab('vendors')"><span class="nav-icon">🏢</span><span class="nav-label">業者管理</span></button>
+  </nav>
+</div>
+
+<!-- ===== 商品フォーム ===== -->
+<div id="product-form-screen" class="form-screen">
+  <div class="form-header fh-blue">
+    <button class="btn-back" onclick="closeProductForm()">← 戻る</button>
+    <span class="form-title" id="product-form-title">商品を追加</span>
+    <span style="width:48px;"></span>
+  </div>
+  <div class="wrap">
+    <div class="card"><p class="card-label">商品名 *</p><input type="text" id="pf-name" class="form-input" placeholder="例：りんごジュース 1L" /></div>
+    <div class="card"><p class="card-label">仕入先業者</p><select id="pf-vendor" class="form-input"></select></div>
+    <div class="card"><p class="card-label">仕入値（円）</p><div class="yen-wrap"><input type="number" id="pf-cost" class="form-input" placeholder="0" min="0" /></div></div>
+    <div class="card"><p class="card-label">売値（円）</p><div class="yen-wrap"><input type="number" id="pf-sell" class="form-input" placeholder="0" min="0" /></div></div>
+    <div class="card"><p class="card-label">現在の在庫数</p><input type="number" id="pf-stock" class="form-input" placeholder="0" min="0" /></div>
+    <div class="card"><p class="card-label">最低在庫数（警告ライン）</p><input type="number" id="pf-minstock" class="form-input" placeholder="0" min="0" /></div>
+    <div class="card"><p class="card-label">使用期限・消費期限（任意）</p><input type="date" id="pf-expiry" class="form-input" /></div>
+    <p class="error-msg" id="pf-error"></p>
+    <button class="btn-primary" onclick="saveProduct()">保存する</button>
+  </div>
+</div>
+
+<!-- ===== 業者フォーム ===== -->
+<div id="vendor-form-screen" class="form-screen">
+  <div class="form-header fh-green">
+    <button class="btn-back" onclick="closeVendorForm()">← 戻る</button>
+    <span class="form-title" id="vendor-form-title">業者を追加</span>
+    <span style="width:48px;"></span>
+  </div>
+  <div class="wrap">
+    <div class="card"><p class="card-label">業者名 *</p><input type="text" id="vf-name" class="form-input" placeholder="例：山田商事" /></div>
+    <div class="card"><p class="card-label">連絡先</p><input type="text" id="vf-contact" class="form-input" placeholder="電話番号・メールなど" /></div>
+    <div class="card"><p class="card-label">メモ</p><input type="text" id="vf-memo" class="form-input" placeholder="入荷曜日など" /></div>
+    <p class="error-msg" id="vf-error"></p>
+    <button class="btn-primary green" onclick="saveVendor()">保存する</button>
+  </div>
+</div>
+
+<!-- ===== データ管理モーダル ===== -->
+<div id="data-modal" style="display:none;position:fixed;inset:0;background:rgba(10,20,50,.5);z-index:500;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:var(--card);border-radius:var(--radius);max-width:400px;width:100%;max-height:88vh;overflow-y:auto;padding:18px;">
+    <p style="font-size:16px;font-weight:700;margin-bottom:14px;">⚙️ データ管理</p>
+
+    <p class="card-label">CSVエクスポート</p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+      <button class="btn-edit" onclick="exportCSV('products')">📦 商品データをエクスポート</button>
+      <button class="btn-edit" onclick="exportCSV('vendors')">🏢 業者データをエクスポート</button>
+      <button class="btn-edit" onclick="exportCSV('logs')">🔄 入出庫履歴をエクスポート</button>
+    </div>
+    <div id="csv-export-wrap"></div>
+
+    <p class="card-label" style="margin-top:16px;">CSVインポート（同IDは上書き）</p>
+    <input type="file" id="csv-import-file" accept=".csv" style="display:none;" onchange="importCSV(this)" />
+    <button class="btn-edit" style="width:100%;margin-bottom:16px;" onclick="document.getElementById('csv-import-file').click()">📂 CSVファイルを選択してインポート</button>
+    <p id="csv-import-status" style="font-size:12px;min-height:16px;margin-bottom:10px;"></p>
+
+    <p class="card-label">全データのバックアップ（JSON）</p>
+    <button class="btn-edit" style="width:100%;margin-bottom:8px;" onclick="exportAllJSON()">📋 全データをコピー用に表示</button>
+    <div id="json-export-wrap"></div>
+    <textarea id="json-import-area" class="csv-area" placeholder="保存したJSONをここに貼り付けて復元できます" style="margin-top:8px;"></textarea>
+    <button class="btn-edit" style="width:100%;margin-top:8px;margin-bottom:16px;" onclick="importAllJSON()">復元する</button>
+
+    <p class="card-label" style="color:var(--red);">データの削除</p>
+    <button class="btn-primary red" onclick="clearAllData()">すべてのデータを削除</button>
+    <button class="btn-edit" style="width:100%;margin-top:8px;" onclick="closeDataModal()">閉じる</button>
+  </div>
+</div>
+
+<!-- ===== リセット確認モーダル ===== -->
+<div id="reset-modal" style="display:none;position:fixed;inset:0;background:rgba(10,20,50,.5);z-index:500;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:var(--card);border-radius:var(--radius);max-width:360px;width:100%;padding:20px;">
+    <p style="font-size:15px;font-weight:700;margin-bottom:10px;">ID・パスワードを忘れた場合</p>
+    <p style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:16px;">この端末に保存されているログイン情報を削除し、新しいID・パスワードを再設定できます。なお、商品・業者・入出庫データはそのまま残ります。</p>
+    <button class="btn-primary red" onclick="resetCredentials()">ログイン情報をリセットする</button>
+    <button class="btn-edit" style="width:100%;margin-top:8px;" onclick="closeResetModal()">キャンセル</button>
+  </div>
+</div>
+
+<script>
+// ===== キー =====
+const KEY_AUTH     = 'tanaoroshi_auth';
+const KEY_PRODUCTS = 'tanaoroshi_products';
+const KEY_VENDORS  = 'tanaoroshi_vendors';
+const KEY_LOGS     = 'tanaoroshi_logs';
+
+let auth = null;
+let products = [];
+let vendors  = [];
+let logs     = [];
+let currentTab = 'dashboard';
+let stockType = 'in';
+let editingProductId = null;
+let editingVendorId  = null;
+
+// ===== ユーティリティ =====
+function todayStr(){
+  const n=new Date();
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+}
+function fmt(n){ return Number(n||0).toLocaleString('ja-JP'); }
+function fmtYen(n){ return '¥'+fmt(Math.round(n||0)); }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function uid(prefix){ return (prefix||'id')+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+function togglePw(id, btn){
+  const el = document.getElementById(id);
+  if(el.type==='password'){ el.type='text'; btn.textContent='🙈'; }
+  else { el.type='password'; btn.textContent='👁️'; }
+}
+
+// 簡易ハッシュ（クライアント内保存用、外部送信なし）
+function simpleHash(str){
+  let h = 0;
+  for(let i=0;i<str.length;i++){ h = (h*31 + str.charCodeAt(i)) >>> 0; }
+  return h.toString(36);
+}
+
+// ===== データ読み書き =====
+function loadData(){
+  try{ auth = JSON.parse(localStorage.getItem(KEY_AUTH) || 'null'); }catch(e){ auth=null; }
+  try{ products = JSON.parse(localStorage.getItem(KEY_PRODUCTS) || '[]'); }catch(e){ products=[]; }
+  try{ vendors  = JSON.parse(localStorage.getItem(KEY_VENDORS)  || '[]'); }catch(e){ vendors=[]; }
+  try{ logs     = JSON.parse(localStorage.getItem(KEY_LOGS)     || '[]'); }catch(e){ logs=[]; }
+}
+function saveAuth(){ try{ localStorage.setItem(KEY_AUTH, JSON.stringify(auth)); }catch(e){} }
+function saveProducts(){ try{ localStorage.setItem(KEY_PRODUCTS, JSON.stringify(products)); }catch(e){} }
+function saveVendors(){ try{ localStorage.setItem(KEY_VENDORS, JSON.stringify(vendors)); }catch(e){} }
+function saveLogs(){ try{ localStorage.setItem(KEY_LOGS, JSON.stringify(logs)); }catch(e){} }
+
+// ===== セットアップ・ログイン =====
+function doSetup(){
+  const uidVal = document.getElementById('setup-uid').value.trim();
+  const pw  = document.getElementById('setup-pw').value;
+  const pw2 = document.getElementById('setup-pw2').value;
+  const err = document.getElementById('setup-error');
+  if(!uidVal){ err.textContent='ユーザーIDを入力してください'; return; }
+  if(pw.length<6){ err.textContent='パスワードは6文字以上で入力してください'; return; }
+  if(pw!==pw2){ err.textContent='パスワードが一致しません'; return; }
+  err.textContent='';
+  auth = { uid: uidVal, pwHash: simpleHash(pw) };
+  saveAuth();
+  sessionStorage.setItem('tanaoroshi_session', '1');
+  showMainScreen();
+}
+
+function doLogin(){
+  const uidVal = document.getElementById('login-uid').value.trim();
+  const pw  = document.getElementById('login-pw').value;
+  const err = document.getElementById('login-error');
+  if(!uidVal || !pw){ err.textContent='IDとパスワードを入力してください'; return; }
+  if(!auth || uidVal!==auth.uid || simpleHash(pw)!==auth.pwHash){
+    err.textContent='IDまたはパスワードが正しくありません';
+    return;
+  }
+  err.textContent='';
+  sessionStorage.setItem('tanaoroshi_session', '1');
+  showMainScreen();
+}
+
+function doLogout(){
+  if(!confirm('ログアウトしますか？')) return;
+  sessionStorage.removeItem('tanaoroshi_session');
+  showLoginScreen();
+}
+
+function showResetConfirm(){ document.getElementById('reset-modal').style.display='flex'; }
+function closeResetModal(){ document.getElementById('reset-modal').style.display='none'; }
+function resetCredentials(){
+  auth = null;
+  localStorage.removeItem(KEY_AUTH);
+  closeResetModal();
+  showSetupScreen();
+}
+
+function showSetupScreen(){
+  document.getElementById('setup-screen').style.display='flex';
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('main-screen').style.display='none';
+}
+function showLoginScreen(){
+  document.getElementById('setup-screen').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('main-screen').style.display='none';
+  document.getElementById('login-uid').value='';
+  document.getElementById('login-pw').value='';
+  document.getElementById('login-error').textContent='';
+}
+function showMainScreen(){
+  document.getElementById('setup-screen').style.display='none';
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('main-screen').style.display='block';
+  initMainScreen();
+}
+
+// ===== タブ切替 =====
+function switchTab(tab){
+  currentTab = tab;
+  ['dashboard','products','stock','vendors'].forEach(t=>{
+    document.getElementById('tab-'+t).style.display = (t===tab?'block':'none');
+    document.getElementById('nav-'+t).classList.toggle('active', t===tab);
+  });
+  if(tab==='dashboard') renderDashboard();
+  if(tab==='products')  renderProducts();
+  if(tab==='stock')     renderStock();
+  if(tab==='vendors')   renderVendors();
+}
+
+// ===== ダッシュボード =====
+function renderDashboard(){
+  const totalProducts = products.length;
+  const lowStock = products.filter(p=>p.stock<=p.minStock).length;
+  const costVal = products.reduce((s,p)=>s+p.stock*p.costPrice,0);
+  const sellVal = products.reduce((s,p)=>s+p.stock*p.sellPrice,0);
+  document.getElementById('st-products').textContent = totalProducts;
+  const lowEl = document.getElementById('st-low');
+  lowEl.textContent = lowStock;
+  lowEl.className = 'stat-num '+(lowStock>0?'warn':'ok');
+  document.getElementById('st-costval').textContent = fmtYen(costVal);
+  document.getElementById('st-sellval').textContent = fmtYen(sellVal);
+
+  const now = todayStr();
+  const warnD = new Date(); warnD.setDate(warnD.getDate()+30);
+  const warnStr = warnD.toISOString().slice(0,10);
+  let alerts='';
+  products.filter(p=>p.expiry).forEach(p=>{
+    if(p.expiry<now) alerts += `<div class="alert alert-danger">⚠️ 期限切れ：${esc(p.name)}（${p.expiry}）</div>`;
+    else if(p.expiry<warnStr) alerts += `<div class="alert alert-warn">⏰ 期限30日以内：${esc(p.name)}（${p.expiry}）</div>`;
+  });
+  products.filter(p=>p.stock<=p.minStock).forEach(p=>{
+    alerts += `<div class="alert alert-warn">📉 在庫少：${esc(p.name)}（現在 ${p.stock}点／最低 ${p.minStock}点）</div>`;
+  });
+  document.getElementById('alert-area').innerHTML = alerts;
+
+  const vMap={}; vendors.forEach(v=>vMap[v.id]=v.name);
+  let rows = products.map(p=>`
+    <div class="log-row">
+      <div>
+        <div class="log-name">${esc(p.name)}</div>
+        <div class="log-sub">${esc(vMap[p.vendorId]||'—')}　仕入${fmtYen(p.costPrice)}／売価${fmtYen(p.sellPrice)}</div>
+        ${p.expiry?`<div class="log-sub" style="color:${p.expiry<now?'var(--red)':(p.expiry<warnStr?'var(--orange)':'var(--text3)')}">期限：${p.expiry}</div>`:''}
+      </div>
+      <div class="item-stock" style="color:${p.stock<=p.minStock?'var(--red)':'var(--green-dk)'}">${p.stock}<span style="font-size:11px;">点</span></div>
+    </div>`).join('');
+  document.getElementById('stock-overview').innerHTML = rows || '<div class="empty-msg">商品が登録されていません</div>';
+
+  if(!document.getElementById('rep-from').value){
+    const d=new Date(), y=d.getFullYear(), m=d.getMonth();
+    document.getElementById('rep-from').value = new Date(y,m,1).toISOString().slice(0,10);
+    document.getElementById('rep-to').value   = new Date(y,m+1,0).toISOString().slice(0,10);
+  }
+}
+
+// ===== 商品管理 =====
+function renderProducts(){
+  const vMap={}; vendors.forEach(v=>vMap[v.id]=v.name);
+  const now=todayStr();
+  const warnD=new Date(); warnD.setDate(warnD.getDate()+30);
+  const warnStr=warnD.toISOString().slice(0,10);
+  document.getElementById('product-list').innerHTML = products.map(p=>`
+    <div class="item-card ${p.stock<=p.minStock?'low':''}">
+      <div class="item-head">
+        <div>
+          <div class="item-name">${esc(p.name)}</div>
+          <div class="item-sub">仕入先：${esc(vMap[p.vendorId]||'—')}</div>
+        </div>
+        <div>
+          <div class="item-stock" style="color:${p.stock<=p.minStock?'var(--red)':'var(--green-dk)'}">${p.stock}点</div>
+          ${p.stock<=p.minStock?'<span class="tag tag-low">在庫少</span>':''}
+        </div>
+      </div>
+      <div class="item-grid">
+        <div>仕入値：${fmtYen(p.costPrice)}</div>
+        <div>売値：${fmtYen(p.sellPrice)}</div>
+        <div>最低在庫：${p.minStock}点</div>
+        <div>${p.expiry?`期限：<span style="color:${p.expiry<now?'var(--red)':(p.expiry<warnStr?'var(--orange)':'var(--text2)')}">${p.expiry}</span>`:'期限：なし'}</div>
+      </div>
+      <div class="row-btns">
+        <button class="btn-edit" onclick="openProductForm('${p.id}')">✏️ 編集</button>
+        <button class="btn-del" onclick="deleteProduct('${p.id}')">🗑 削除</button>
+      </div>
+    </div>`).join('') || '<div class="empty-msg">商品が登録されていません</div>';
+}
+
+function openProductForm(id){
+  editingProductId = id||null;
+  document.getElementById('product-form-title').textContent = id?'商品を編集':'商品を追加';
+  document.getElementById('pf-error').textContent='';
+  const vSel = document.getElementById('pf-vendor');
+  vSel.innerHTML = '<option value="">未設定</option>' + vendors.map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join('');
+  if(id){
+    const p = products.find(x=>x.id===id);
+    if(p){
+      document.getElementById('pf-name').value = p.name||'';
+      vSel.value = p.vendorId||'';
+      document.getElementById('pf-cost').value = p.costPrice||'';
+      document.getElementById('pf-sell').value = p.sellPrice||'';
+      document.getElementById('pf-stock').value = p.stock||0;
+      document.getElementById('pf-minstock').value = p.minStock||0;
+      document.getElementById('pf-expiry').value = p.expiry||'';
+    }
+  } else {
+    document.getElementById('pf-name').value='';
+    vSel.value='';
+    document.getElementById('pf-cost').value='';
+    document.getElementById('pf-sell').value='';
+    document.getElementById('pf-stock').value=0;
+    document.getElementById('pf-minstock').value=0;
+    document.getElementById('pf-expiry').value='';
+  }
+  document.getElementById('product-form-screen').style.display='block';
+  window.scrollTo(0,0);
+}
+function closeProductForm(){ document.getElementById('product-form-screen').style.display='none'; renderProducts(); }
+
+function saveProduct(){
+  const name = document.getElementById('pf-name').value.trim();
+  const err = document.getElementById('pf-error');
+  if(!name){ err.textContent='商品名を入力してください'; return; }
+  err.textContent='';
+  const obj = {
+    name,
+    vendorId: document.getElementById('pf-vendor').value,
+    costPrice: parseInt(document.getElementById('pf-cost').value)||0,
+    sellPrice: parseInt(document.getElementById('pf-sell').value)||0,
+    stock: parseInt(document.getElementById('pf-stock').value)||0,
+    minStock: parseInt(document.getElementById('pf-minstock').value)||0,
+    expiry: document.getElementById('pf-expiry').value
+  };
+  if(editingProductId){
+    const i = products.findIndex(x=>x.id===editingProductId);
+    if(i>=0) products[i] = {...products[i], ...obj};
+  } else {
+    products.push({ id: uid('p'), ...obj });
+  }
+  saveProducts();
+  closeProductForm();
+}
+
+function deleteProduct(id){
+  if(!confirm('この商品を削除しますか？関連する入出庫履歴は残ります。')) return;
+  products = products.filter(x=>x.id!==id);
+  saveProducts();
+  renderProducts();
+}
+
+// ===== 業者管理 =====
+function renderVendors(){
+  document.getElementById('vendor-list').innerHTML = vendors.map(v=>`
+    <div class="item-card">
+      <div class="item-name">${esc(v.name)}</div>
+      ${v.contact?`<div class="item-sub" style="margin-top:4px;">📞 ${esc(v.contact)}</div>`:''}
+      ${v.memo?`<div class="item-sub" style="margin-top:2px;">${esc(v.memo)}</div>`:''}
+      <div class="item-sub" style="margin-top:6px;">登録商品：${products.filter(p=>p.vendorId===v.id).length}件</div>
+      <div class="row-btns">
+        <button class="btn-edit" onclick="openVendorForm('${v.id}')">✏️ 編集</button>
+        <button class="btn-del" onclick="deleteVendor('${v.id}')">🗑 削除</button>
+      </div>
+    </div>`).join('') || '<div class="empty-msg">業者が登録されていません</div>';
+}
+
+function openVendorForm(id){
+  editingVendorId = id||null;
+  document.getElementById('vendor-form-title').textContent = id?'業者を編集':'業者を追加';
+  document.getElementById('vf-error').textContent='';
+  if(id){
+    const v = vendors.find(x=>x.id===id);
+    if(v){
+      document.getElementById('vf-name').value = v.name||'';
+      document.getElementById('vf-contact').value = v.contact||'';
+      document.getElementById('vf-memo').value = v.memo||'';
+    }
+  } else {
+    document.getElementById('vf-name').value='';
+    document.getElementById('vf-contact').value='';
+    document.getElementById('vf-memo').value='';
+  }
+  document.getElementById('vendor-form-screen').style.display='block';
+  window.scrollTo(0,0);
+}
+function closeVendorForm(){ document.getElementById('vendor-form-screen').style.display='none'; renderVendors(); }
+
+function saveVendor(){
+  const name = document.getElementById('vf-name').value.trim();
+  const err = document.getElementById('vf-error');
+  if(!name){ err.textContent='業者名を入力してください'; return; }
+  err.textContent='';
+  const obj = { name, contact: document.getElementById('vf-contact').value.trim(), memo: document.getElementById('vf-memo').value.trim() };
+  if(editingVendorId){
+    const i = vendors.findIndex(x=>x.id===editingVendorId);
+    if(i>=0) vendors[i] = {...vendors[i], ...obj};
+  } else {
+    vendors.push({ id: uid('v'), ...obj });
+  }
+  saveVendors();
+  closeVendorForm();
+}
+
+function deleteVendor(id){
+  const used = products.some(p=>p.vendorId===id);
+  if(used && !confirm('この業者に紐づく商品があります。削除しますか？')) return;
+  if(!used && !confirm('この業者を削除しますか？')) return;
+  vendors = vendors.filter(x=>x.id!==id);
+  saveVendors();
+  renderVendors();
+}
+
+// ===== 入出庫 =====
+function renderStock(){
+  const sel = document.getElementById('sk-product');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">商品を選択</option>' + products.map(p=>`<option value="${p.id}"${p.id===cur?' selected':''}>${esc(p.name)}（在庫:${p.stock}点）</option>`).join('');
+  if(!document.getElementById('sk-date').value) document.getElementById('sk-date').value = todayStr();
+  setStockType(stockType);
+
+  const pMap={}; products.forEach(p=>pMap[p.id]=p.name);
+  const sorted = [...logs].sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id)).slice(0,50);
+  document.getElementById('stock-history').innerHTML = sorted.length ? sorted.map(l=>`
+    <div class="log-row">
+      <div>
+        <div class="log-name">${esc(pMap[l.productId]||'不明な商品')}</div>
+        <div class="log-sub">${l.date}${l.memo?'　'+esc(l.memo):''}</div>
+      </div>
+      <div>
+        <span class="log-type ${l.type}">${l.type==='in'?'入庫':'出庫'}</span>
+        <div class="log-qty">${l.type==='in'?'+':'-'}${l.qty}点</div>
+      </div>
+    </div>`).join('') : '<div class="empty-msg">履歴がありません</div>';
+}
+
+function setStockType(t){
+  stockType = t;
+  document.getElementById('sk-in-btn').className  = 'type-btn'+(t==='in' ?' active-in':'');
+  document.getElementById('sk-out-btn').className = 'type-btn'+(t==='out'?' active-out':'');
+}
+
+function recordStock(){
+  const pid = document.getElementById('sk-product').value;
+  const qty = parseInt(document.getElementById('sk-qty').value)||0;
+  const date = document.getElementById('sk-date').value;
+  const memo = document.getElementById('sk-memo').value.trim();
+  const err = document.getElementById('sk-error');
+  if(!pid){ err.textContent='商品を選択してください'; return; }
+  if(qty<1){ err.textContent='数量を正しく入力してください'; return; }
+  if(!date){ err.textContent='日付を入力してください'; return; }
+  const p = products.find(x=>x.id===pid);
+  if(!p){ err.textContent='商品が見つかりません'; return; }
+  if(stockType==='out' && p.stock<qty){ err.textContent=`在庫が不足しています（現在 ${p.stock}点）`; return; }
+  err.textContent='';
+  p.stock += (stockType==='in'?qty:-qty);
+  logs.push({ id: uid('l'), productId: pid, type: stockType, qty, date, memo });
+  saveProducts();
+  saveLogs();
+  document.getElementById('sk-qty').value='';
+  document.getElementById('sk-memo').value='';
+  renderStock();
+}
+
+// ===== 集計レポート =====
+let lastReportHTML = null;
+let lastReportPeriod = '';
+
+function calcReport(){
+  const from = document.getElementById('rep-from').value;
+  const to   = document.getElementById('rep-to').value;
+  if(!from || !to){ alert('期間を指定してください'); return; }
+
+  const inPeriod = logs.filter(l=>l.date>=from && l.date<=to);
+  const pMap={}; products.forEach(p=>pMap[p.id]=p);
+  const vMap={}; vendors.forEach(v=>vMap[v.id]=v.name);
+
+  let totalSales=0, totalCost=0, totalIn=0;
+  const prodStats={}, vendorStats={};
+
+  inPeriod.forEach(l=>{
+    const p = pMap[l.productId];
+    if(!p) return;
+    if(!prodStats[l.productId]) prodStats[l.productId] = { name:p.name, outQty:0, sales:0, cost:0 };
+    const vid = p.vendorId||'__none__';
+    if(!vendorStats[vid]) vendorStats[vid] = { name: vMap[vid]||'未設定', inQty:0, outQty:0, sales:0, cost:0 };
+
+    if(l.type==='in'){
+      totalIn += l.qty;
+      vendorStats[vid].inQty += l.qty;
+    } else {
+      const sales = l.qty*p.sellPrice, cost = l.qty*p.costPrice;
+      prodStats[l.productId].outQty += l.qty;
+      prodStats[l.productId].sales += sales;
+      prodStats[l.productId].cost += cost;
+      vendorStats[vid].outQty += l.qty;
+      vendorStats[vid].sales += sales;
+      vendorStats[vid].cost += cost;
+      totalSales += sales;
+      totalCost += cost;
+    }
+  });
+
+  const gross = totalSales - totalCost;
+  let html = `
+    <div class="stats" style="margin-bottom:10px;">
+      <div class="stat-card"><p class="stat-label">売上高</p><p class="stat-num" style="font-size:16px;">${fmtYen(totalSales)}</p></div>
+      <div class="stat-card"><p class="stat-label">仕入総数</p><p class="stat-num" style="font-size:16px;">${fmt(totalIn)}点</p></div>
+      <div class="stat-card"><p class="stat-label">仕入原価合計</p><p class="stat-num" style="font-size:16px;">${fmtYen(totalCost)}</p></div>
+      <div class="stat-card"><p class="stat-label">粗利益</p><p class="stat-num" style="font-size:16px;color:${gross>=0?'var(--green-dk)':'var(--red)'}">${fmtYen(gross)}</p></div>
+    </div>
+    <p class="card-label">業者別集計</p>
+    <table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:12px;">
+      <tr style="border-bottom:2px solid var(--blue-pale);"><th style="text-align:left;padding:6px 4px;color:var(--text3);">業者名</th><th style="text-align:right;padding:6px 4px;color:var(--text3);">仕入数</th><th style="text-align:right;padding:6px 4px;color:var(--text3);">売上高</th><th style="text-align:right;padding:6px 4px;color:var(--text3);">粗利</th></tr>
+      ${Object.values(vendorStats).map(v=>`<tr style="border-bottom:1px solid var(--blue-pale);">
+        <td style="padding:6px 4px;">${esc(v.name)}</td>
+        <td style="text-align:right;padding:6px 4px;">${fmt(v.inQty)}点</td>
+        <td style="text-align:right;padding:6px 4px;">${fmtYen(v.sales)}</td>
+        <td style="text-align:right;padding:6px 4px;color:${v.sales-v.cost>=0?'var(--green-dk)':'var(--red)'}">${fmtYen(v.sales-v.cost)}</td>
+      </tr>`).join('') || '<tr><td colspan="4" style="padding:6px 4px;color:var(--text3);">データがありません</td></tr>'}
+    </table>
+    <p class="card-label">商品別集計（出庫分）</p>
+    <table style="width:100%;font-size:12px;border-collapse:collapse;">
+      <tr style="border-bottom:2px solid var(--blue-pale);"><th style="text-align:left;padding:6px 4px;color:var(--text3);">商品名</th><th style="text-align:right;padding:6px 4px;color:var(--text3);">出庫</th><th style="text-align:right;padding:6px 4px;color:var(--text3);">売上</th><th style="text-align:right;padding:6px 4px;color:var(--text3);">粗利</th></tr>
+      ${Object.values(prodStats).filter(p=>p.outQty>0).map(p=>`<tr style="border-bottom:1px solid var(--blue-pale);">
+        <td style="padding:6px 4px;">${esc(p.name)}</td>
+        <td style="text-align:right;padding:6px 4px;">${fmt(p.outQty)}</td>
+        <td style="text-align:right;padding:6px 4px;">${fmtYen(p.sales)}</td>
+        <td style="text-align:right;padding:6px 4px;color:${p.sales-p.cost>=0?'var(--green-dk)':'var(--red)'}">${fmtYen(p.sales-p.cost)}</td>
+      </tr>`).join('') || '<tr><td colspan="4" style="padding:6px 4px;color:var(--text3);">データがありません</td></tr>'}
+    </table>`;
+
+  document.getElementById('report-result').innerHTML = html;
+  document.getElementById('print-btn').style.display = 'block';
+  lastReportHTML = html;
+  lastReportPeriod = `${from} 〜 ${to}`;
+}
+
+function printReport(){
+  if(!lastReportHTML){ alert('先に「集計する」を押してください'); return; }
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>棚卸し集計レポート</title>
+  <style>
+    body{font-family:sans-serif;font-size:13px;padding:20px;color:#222;}
+    h1{font-size:18px;margin-bottom:4px;}
+    p.period{color:#666;font-size:12px;margin-bottom:14px;}
+    table{width:100%;border-collapse:collapse;margin-bottom:16px;}
+    th{background:#185FA5;color:#fff;padding:7px 8px;font-size:12px;text-align:left;}
+    td{padding:7px 8px;border-bottom:1px solid #ddd;font-size:12px;}
+    .stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;}
+    .stat-card{border:1px solid #ccc;border-radius:6px;padding:10px 14px;}
+    .stat-label{font-size:11px;color:#666;margin-bottom:4px;}
+    .stat-val{font-size:18px;font-weight:700;}
+    h2{font-size:14px;margin:16px 0 8px;}
+    @media print{ body{padding:10px;} }
+  </style></head>
+  <body>
+    <h1>棚卸し集計レポート</h1>
+    <p class="period">集計期間：${lastReportPeriod}　出力日：${new Date().toLocaleDateString('ja-JP')}</p>
+    ${lastReportHTML.replace('<div class="stats"','<div class="stat-grid"').replace(/class="stat-card"/g,'class="stat-card"').replace(/<p class="stat-label">/g,'<div class="stat-label">').replace(/<\/p>\s*<p class="stat-num"[^>]*>/g,'</div><div class="stat-val">').replace(/<\/p>\s*<\/div>/g,'</div></div>').replace(/<p class="card-label">/g,'<h2>').replace(/<\/p>(\s*<table)/g,'</h2>$1')}
+    <script>window.print();<\/script>
+  </body></html>`);
+}
+
+// ===== CSVエクスポート・インポート =====
+function csvEscape(s){
+  s = String(s===null||s===undefined?'':s);
+  if(s.includes(',')||s.includes('"')||s.includes('\n')) return '"'+s.replace(/"/g,'""')+'"';
+  return s;
+}
+function buildCSV(rows){
+  return '\uFEFF' + rows.map(r=>r.map(csvEscape).join(',')).join('\r\n');
+}
+function showCSVResult(content, filename){
+  const wrap = document.getElementById('csv-export-wrap');
+  wrap.innerHTML = `
+    <p style="font-size:12px;font-weight:700;margin:10px 0 6px;">📄 ${esc(filename)}</p>
+    <textarea class="csv-area" id="csv-out-area" readonly>${content}</textarea>
+    <button class="btn-edit" style="width:100%;margin-top:6px;" onclick="copyCSV()">📋 全てコピーする</button>
+    <p style="font-size:11px;color:var(--text3);margin-top:6px;">コピーしてメモ帳・Excel・スプレッドシートに貼り付け、ファイル名を「${esc(filename)}」として保存してください</p>`;
+}
+function copyCSV(){
+  const ta = document.getElementById('csv-out-area');
+  ta.select(); ta.setSelectionRange(0,99999);
+  try{ document.execCommand('copy'); alert('コピーしました'); }
+  catch(e){ navigator.clipboard && navigator.clipboard.writeText(ta.value).then(()=>alert('コピーしました')); }
+}
+function exportCSV(type){
+  let rows=[], filename='';
+  const stamp = todayStr().replace(/-/g,'');
+  const vMap={}; vendors.forEach(v=>vMap[v.id]=v.name);
+  if(type==='products'){
+    filename = `商品データ_${stamp}.csv`;
+    rows.push(['ID','商品名','仕入先業者ID','仕入先業者名','仕入値','売値','在庫数','最低在庫数','使用期限']);
+    products.forEach(p=>rows.push([p.id,p.name,p.vendorId||'',vMap[p.vendorId]||'',p.costPrice,p.sellPrice,p.stock,p.minStock,p.expiry||'']));
+  } else if(type==='vendors'){
+    filename = `業者データ_${stamp}.csv`;
+    rows.push(['ID','業者名','連絡先','メモ']);
+    vendors.forEach(v=>rows.push([v.id,v.name,v.contact||'',v.memo||'']));
+  } else if(type==='logs'){
+    filename = `入出庫履歴_${stamp}.csv`;
+    const pMap={}; products.forEach(p=>pMap[p.id]=p.name);
+    rows.push(['ID','商品ID','商品名','種別','数量','日付','メモ']);
+    logs.forEach(l=>rows.push([l.id,l.productId,pMap[l.productId]||'',l.type==='in'?'入庫':'出庫',l.qty,l.date,l.memo||'']));
+  }
+  if(rows.length<=1){ alert('エクスポートするデータがありません'); return; }
+  showCSVResult(buildCSV(rows), filename);
+}
+
+function parseCSVLine(line){
+  const result=[]; let cur='', inQ=false;
+  for(let i=0;i<line.length;i++){
+    const ch=line[i];
+    if(inQ){
+      if(ch==='"' && line[i+1]==='"'){ cur+='"'; i++; }
+      else if(ch==='"'){ inQ=false; }
+      else cur+=ch;
+    } else {
+      if(ch==='"') inQ=true;
+      else if(ch===','){ result.push(cur); cur=''; }
+      else cur+=ch;
+    }
+  }
+  result.push(cur);
+  return result;
+}
+
+function importCSV(input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  input.value='';
+  const statusEl = document.getElementById('csv-import-status');
+  statusEl.style.color = 'var(--text3)';
+  statusEl.textContent = '読み込み中...';
+  const reader = new FileReader();
+  reader.onload = e=>{
+    try{
+      let text = e.target.result;
+      if(text.charCodeAt(0)===0xFEFF) text = text.slice(1);
+      const lines = text.split(/\r?\n/).filter(l=>l.trim()!=='');
+      if(lines.length<2){ statusEl.style.color='var(--red)'; statusEl.textContent='データが見つかりませんでした'; return; }
+      const header = parseCSVLine(lines[0]);
+      const dataRows = lines.slice(1).map(l=>parseCSVLine(l));
+      let added=0, updated=0;
+
+      if(header.includes('商品名') && header.includes('在庫数')){
+        const idx = h => header.indexOf(h);
+        dataRows.forEach(row=>{
+          const id = row[idx('ID')];
+          if(!id) return;
+          const obj = {
+            name: row[idx('商品名')]||'',
+            vendorId: row[idx('仕入先業者ID')]||'',
+            costPrice: parseInt(row[idx('仕入値')])||0,
+            sellPrice: parseInt(row[idx('売値')])||0,
+            stock: parseInt(row[idx('在庫数')])||0,
+            minStock: parseInt(row[idx('最低在庫数')])||0,
+            expiry: row[idx('使用期限')]||''
+          };
+          const i = products.findIndex(x=>x.id===id);
+          if(i>=0){ products[i]={...products[i],...obj}; updated++; }
+          else { products.push({id,...obj}); added++; }
+        });
+        saveProducts();
+      } else if(header.includes('業者名')){
+        const idx = h => header.indexOf(h);
+        dataRows.forEach(row=>{
+          const id = row[idx('ID')];
+          if(!id) return;
+          const obj = { name: row[idx('業者名')]||'', contact: row[idx('連絡先')]||'', memo: row[idx('メモ')]||'' };
+          const i = vendors.findIndex(x=>x.id===id);
+          if(i>=0){ vendors[i]={...vendors[i],...obj}; updated++; }
+          else { vendors.push({id,...obj}); added++; }
+        });
+        saveVendors();
+      } else if(header.includes('種別') && header.includes('数量')){
+        const idx = h => header.indexOf(h);
+        dataRows.forEach(row=>{
+          const id = row[idx('ID')];
+          if(!id) return;
+          const obj = {
+            productId: row[idx('商品ID')]||'',
+            type: row[idx('種別')]==='入庫'?'in':'out',
+            qty: parseInt(row[idx('数量')])||0,
+            date: row[idx('日付')]||'',
+            memo: row[idx('メモ')]||''
+          };
+          const i = logs.findIndex(x=>x.id===id);
+          if(i>=0){ logs[i]={...logs[i],...obj}; updated++; }
+          else { logs.push({id,...obj}); added++; }
+        });
+        saveLogs();
+      } else {
+        statusEl.style.color='var(--red)'; statusEl.textContent='対応していないCSV形式です'; return;
+      }
+
+      statusEl.style.color='var(--green-dk)';
+      statusEl.textContent = `インポート完了：新規 ${added}件、更新 ${updated}件`;
+      renderDashboard();
+      if(currentTab==='products') renderProducts();
+      if(currentTab==='vendors') renderVendors();
+      if(currentTab==='stock') renderStock();
+    }catch(err){
+      statusEl.style.color='var(--red)';
+      statusEl.textContent='読み込みに失敗しました（ファイル形式を確認してください）';
+    }
+  };
+  reader.onerror=()=>{ statusEl.style.color='var(--red)'; statusEl.textContent='ファイルの読み込みに失敗しました'; };
+  const sniff = new FileReader();
+  sniff.onload = ev=>{
+    const buf = new Uint8Array(ev.target.result);
+    const isUtf8Bom = buf[0]===0xEF && buf[1]===0xBB && buf[2]===0xBF;
+    const looksShiftJis = !isUtf8Bom && ((buf[0]>=0x82&&buf[0]<=0x9F)||(buf[0]>=0xE0&&buf[0]<=0xFC));
+    reader.readAsText(file, looksShiftJis?'Shift_JIS':'UTF-8');
+  };
+  sniff.readAsArrayBuffer(file.slice(0,4));
+}
+
+// ===== JSON全体バックアップ =====
+function exportAllJSON(){
+  const backup = { version:1, exportedAt:new Date().toISOString(), products, vendors, logs };
+  const json = JSON.stringify(backup, null, 2);
+  document.getElementById('json-export-wrap').innerHTML = `
+    <textarea class="csv-area" id="json-out-area" readonly style="height:160px;">${json}</textarea>
+    <button class="btn-edit" style="width:100%;margin-top:6px;" onclick="copyJSON()">📋 全てコピーする</button>`;
+}
+function copyJSON(){
+  const ta = document.getElementById('json-out-area');
+  ta.select(); ta.setSelectionRange(0,99999);
+  try{ document.execCommand('copy'); alert('コピーしました'); }
+  catch(e){ navigator.clipboard && navigator.clipboard.writeText(ta.value).then(()=>alert('コピーしました')); }
+}
+function importAllJSON(){
+  const text = document.getElementById('json-import-area').value.trim();
+  if(!text){ alert('JSONを貼り付けてください'); return; }
+  try{
+    const backup = JSON.parse(text);
+    if(!backup.products && !backup.vendors && !backup.logs){ alert('有効なバックアップデータではありません'); return; }
+    if(!confirm('現在のデータを上書きして復元します。よろしいですか？')) return;
+    products = backup.products || [];
+    vendors  = backup.vendors  || [];
+    logs     = backup.logs     || [];
+    saveProducts(); saveVendors(); saveLogs();
+    document.getElementById('json-import-area').value='';
+    alert('復元しました');
+    renderDashboard();
+    if(currentTab==='products') renderProducts();
+    if(currentTab==='vendors') renderVendors();
+    if(currentTab==='stock') renderStock();
+  }catch(e){
+    alert('JSONの読み込みに失敗しました。内容を確認してください');
+  }
+}
+
+function clearAllData(){
+  if(!confirm('商品・業者・入出庫データをすべて削除します。元に戻せません。よろしいですか？')) return;
+  products=[]; vendors=[]; logs=[];
+  saveProducts(); saveVendors(); saveLogs();
+  closeDataModal();
+  renderDashboard();
+}
+
+function showDataModal(){ document.getElementById('data-modal').style.display='flex'; }
+function closeDataModal(){ document.getElementById('data-modal').style.display='none'; }
+
+// ===== 初期化 =====
+function initMainScreen(){
+  const now = new Date();
+  document.getElementById('header-date').textContent = `${now.getMonth()+1}/${now.getDate()}(${['日','月','火','水','木','金','土'][now.getDay()]})`;
+  switchTab('dashboard');
+}
+
+function init(){
+  loadData();
+  if(!auth){
+    showSetupScreen();
+    return;
+  }
+  if(sessionStorage.getItem('tanaoroshi_session')==='1'){
+    showMainScreen();
+  } else {
+    showLoginScreen();
+  }
+}
+init();
+</script>
+</body>
+</html>
