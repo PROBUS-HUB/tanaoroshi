@@ -254,16 +254,31 @@ button{-webkit-tap-highlight-color:rgba(24,95,165,.15);touch-action:manipulation
     <div id="tab-products" style="display:none;">
       <div class="card">
         <p class="card-label">商品を追加</p>
-        <input type="text" id="pq-name" class="form-input" placeholder="商品名 *" style="margin-bottom:8px;" />
-        <select id="pq-vendor" class="form-input" style="margin-bottom:8px;"></select>
-        <div style="display:flex;gap:8px;margin-bottom:8px;">
-          <div class="yen-wrap" style="flex:1;"><input type="number" id="pq-cost" class="form-input" placeholder="仕入値" min="0" /></div>
-          <div class="yen-wrap" style="flex:1;"><input type="number" id="pq-sell" class="form-input" placeholder="売値" min="0" /></div>
+        <p class="card-label" style="margin-top:0;margin-bottom:4px;">商品名 *</p>
+        <input type="text" id="pq-name" class="form-input" placeholder="例：りんごジュース 1L" style="margin-bottom:10px;" />
+        <p class="card-label" style="margin-bottom:4px;">仕入先業者</p>
+        <select id="pq-vendor" class="form-input" style="margin-bottom:10px;"></select>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <div style="flex:1;">
+            <p class="card-label" style="margin-bottom:4px;">仕入値（円）</p>
+            <div class="yen-wrap"><input type="number" id="pq-cost" class="form-input" placeholder="0" min="0" /></div>
+          </div>
+          <div style="flex:1;">
+            <p class="card-label" style="margin-bottom:4px;">売値（円）</p>
+            <div class="yen-wrap"><input type="number" id="pq-sell" class="form-input" placeholder="0" min="0" /></div>
+          </div>
         </div>
-        <div style="display:flex;gap:8px;margin-bottom:8px;">
-          <input type="number" id="pq-stock" class="form-input" placeholder="在庫数" min="0" value="0" style="flex:1;" />
-          <input type="number" id="pq-minstock" class="form-input" placeholder="最低在庫数" min="0" value="0" style="flex:1;" />
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <div style="flex:1;">
+            <p class="card-label" style="margin-bottom:4px;">在庫数（点）</p>
+            <input type="number" id="pq-stock" class="form-input" placeholder="0" min="0" value="0" />
+          </div>
+          <div style="flex:1;">
+            <p class="card-label" style="margin-bottom:4px;">最低在庫数（点）</p>
+            <input type="number" id="pq-minstock" class="form-input" placeholder="0" min="0" value="0" />
+          </div>
         </div>
+        <p class="card-label" style="margin-bottom:4px;">使用期限・消費期限（任意）</p>
         <input type="date" id="pq-expiry" class="form-input" style="margin-bottom:8px;" />
         <p class="error-msg" id="pq-error"></p>
         <button class="btn-primary" onclick="quickAddProduct()">＋ この内容で追加する</button>
@@ -642,7 +657,7 @@ function renderProducts(){
   const vMap={}; vendors.forEach(v=>vMap[v.id]=v.name);
   const pqVendor = document.getElementById('pq-vendor');
   const curPq = pqVendor.value;
-  pqVendor.innerHTML = '<option value="">仕入先業者（未設定）</option>' + vendors.map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join('');
+  pqVendor.innerHTML = '<option value="">未設定</option>' + vendors.map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join('');
   pqVendor.value = curPq;
   const now=todayStr();
   const warnD=new Date(); warnD.setDate(warnD.getDate()+30);
