@@ -662,8 +662,9 @@ function renderProducts(){
   const now=todayStr();
   const warnD=new Date(); warnD.setDate(warnD.getDate()+30);
   const warnStr=warnD.toISOString().slice(0,10);
+  const vendorOptions = '<option value="">未設定</option>' + vendors.map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join('');
   document.getElementById('product-list').innerHTML = products.map(p=>`
-    <div class="item-card ${p.stock<=p.minStock?'low':''}">
+    <div class="item-card ${p.stock<=p.minStock?'low':''}" id="pcard-${p.id}">
       <div class="item-head">
         <div>
           <div class="item-name">${esc(p.name)}</div>
@@ -682,10 +683,37 @@ function renderProducts(){
         <div>${p.expiry?`期限：<span style="color:${p.expiry<now?'var(--red)':(p.expiry<warnStr?'var(--orange)':'var(--text2)')}">${p.expiry}</span>`:'期限：なし'}</div>
       </div>
       <div class="row-btns">
-        <button class="btn-edit" onclick="openProductForm('${p.id}')">✏️ 編集</button>
+        <button class="btn-edit" onclick="toggleInlineEdit('${p.id}')">✏️ 編集</button>
         <button class="btn-del" onclick="deleteProduct('${p.id}')">🗑 削除</button>
       </div>
+      <div id="pedit-${p.id}" style="display:none;margin-top:12px;border-top:2px solid var(--blue-lt);padding-top:12px;">
+        <p class="card-label">商品名 *</p>
+        <input type="text" id="pe-name-${p.id}" class="form-input" value="${esc(p.name)}" style="margin-bottom:8px;" />
+        <p class="card-label">仕入先業者</p>
+        <select id="pe-vendor-${p.id}" class="form-input" style="margin-bottom:8px;">${vendorOptions}</select>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <div style="flex:1;"><p class="card-label">仕入値（円）</p><div class="yen-wrap"><input type="number" id="pe-cost-${p.id}" class="form-input" value="${p.costPrice||0}" min="0" /></div></div>
+          <div style="flex:1;"><p class="card-label">売値（円）</p><div class="yen-wrap"><input type="number" id="pe-sell-${p.id}" class="form-input" value="${p.sellPrice||0}" min="0" /></div></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <div style="flex:1;"><p class="card-label">在庫数</p><input type="number" id="pe-stock-${p.id}" class="form-input" value="${p.stock||0}" min="0" /></div>
+          <div style="flex:1;"><p class="card-label">最低在庫数</p><input type="number" id="pe-minstock-${p.id}" class="form-input" value="${p.minStock||0}" min="0" /></div>
+        </div>
+        <p class="card-label">使用期限（任意）</p>
+        <input type="date" id="pe-expiry-${p.id}" class="form-input" value="${p.expiry||''}" style="margin-bottom:10px;" />
+        <p class="error-msg" id="pe-error-${p.id}"></p>
+        <div class="row-btns">
+          <button class="btn-primary" style="margin-bottom:0;" onclick="saveInlineEdit('${p.id}')">保存する</button>
+          <button class="btn-edit" onclick="toggleInlineEdit('${p.id}')">キャンセル</button>
+        </div>
+      </div>
     </div>`).join('') || '<div class="empty-msg">商品が登録されていません</div>';
+
+  // 業者セレクトの値をセット（innerHTML後に設定）
+  products.forEach(p=>{
+    const sel = document.getElementById(`pe-vendor-${p.id}`);
+    if(sel) sel.value = p.vendorId||'';
+  });
 }
 
 function viewProductPhoto(productId, idx){
@@ -728,47 +756,34 @@ function quickAddProduct(){
   renderProducts();
 }
 
-function openProductForm(id){
-  editingProductId = id;
-  document.getElementById('product-form-title').textContent = '商品を編集';
-  document.getElementById('pf-error').textContent='';
-  const vSel = document.getElementById('pf-vendor');
-  vSel.innerHTML = '<option value="">未設定</option>' + vendors.map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join('');
-  const p = products.find(x=>x.id===id);
-  if(p){
-    document.getElementById('pf-name').value = p.name||'';
-    vSel.value = p.vendorId||'';
-    document.getElementById('pf-cost').value = p.costPrice||'';
-    document.getElementById('pf-sell').value = p.sellPrice||'';
-    document.getElementById('pf-stock').value = p.stock||0;
-    document.getElementById('pf-minstock').value = p.minStock||0;
-    document.getElementById('pf-expiry').value = p.expiry||'';
-    setProductPhotos(p.photos||[]);
-  }
-  document.getElementById('product-form-screen').style.display='block';
-  window.scrollTo(0,0);
+function toggleInlineEdit(id){
+  const el = document.getElementById(`pedit-${id}`);
+  if(!el) return;
+  const isOpen = el.style.display !== 'none';
+  // 他を全部閉じる
+  document.querySelectorAll('[id^="pedit-"]').forEach(e=>e.style.display='none');
+  if(!isOpen) el.style.display='block';
 }
-function closeProductForm(){ document.getElementById('product-form-screen').style.display='none'; renderProducts(); }
 
-function saveProduct(){
-  const name = document.getElementById('pf-name').value.trim();
-  const err = document.getElementById('pf-error');
+function saveInlineEdit(id){
+  const name = document.getElementById(`pe-name-${id}`).value.trim();
+  const err = document.getElementById(`pe-error-${id}`);
   if(!name){ err.textContent='商品名を入力してください'; return; }
   err.textContent='';
-  const obj = {
+  const i = products.findIndex(x=>x.id===id);
+  if(i<0) return;
+  products[i] = {
+    ...products[i],
     name,
-    vendorId: document.getElementById('pf-vendor').value,
-    costPrice: parseInt(document.getElementById('pf-cost').value)||0,
-    sellPrice: parseInt(document.getElementById('pf-sell').value)||0,
-    stock: parseInt(document.getElementById('pf-stock').value)||0,
-    minStock: parseInt(document.getElementById('pf-minstock').value)||0,
-    expiry: document.getElementById('pf-expiry').value,
-    photos: [...currentProductPhotos]
+    vendorId: document.getElementById(`pe-vendor-${id}`).value,
+    costPrice: parseInt(document.getElementById(`pe-cost-${id}`).value)||0,
+    sellPrice: parseInt(document.getElementById(`pe-sell-${id}`).value)||0,
+    stock: parseInt(document.getElementById(`pe-stock-${id}`).value)||0,
+    minStock: parseInt(document.getElementById(`pe-minstock-${id}`).value)||0,
+    expiry: document.getElementById(`pe-expiry-${id}`).value,
   };
-  const i = products.findIndex(x=>x.id===editingProductId);
-  if(i>=0) products[i] = {...products[i], ...obj};
   saveProducts();
-  closeProductForm();
+  renderProducts();
 }
 
 function deleteProduct(id){
