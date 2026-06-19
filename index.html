@@ -663,16 +663,47 @@ function renderProducts(){
   const warnD=new Date(); warnD.setDate(warnD.getDate()+30);
   const warnStr=warnD.toISOString().slice(0,10);
   const vendorOptions = '<option value="">未設定</option>' + vendors.map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join('');
-  document.getElementById('product-list').innerHTML = products.map(p=>`
-    <div class="item-card ${p.stock<=p.minStock?'low':''}" id="pcard-${p.id}">
+
+  // 期限あり→期限なしの順、期限ありは早い順
+  const sorted = [...products].sort((a,b)=>{
+    if(a.expiry && b.expiry) return a.expiry.localeCompare(b.expiry);
+    if(a.expiry) return -1;
+    if(b.expiry) return 1;
+    return 0;
+  });
+
+  document.getElementById('product-list').innerHTML = sorted.map(p=>{
+    const isExpired = p.expiry && p.expiry < now;
+    const isWarn    = p.expiry && !isExpired && p.expiry < warnStr;
+    const isLow     = p.stock <= p.minStock;
+
+    // 期限切れ→赤枠、30日以内→オレンジ枠、在庫少→既存赤左ボーダー
+    let cardBorder = '';
+    if(isExpired)     cardBorder = 'border:2px solid var(--red);border-left:5px solid var(--red);background:#fff5f5;';
+    else if(isWarn)   cardBorder = 'border:2px solid var(--orange);border-left:5px solid var(--orange);background:#fffaf0;';
+    else if(isLow)    cardBorder = 'border:2px solid var(--red);border-left:5px solid var(--red);';
+
+    // 期限バッジ
+    let expiryBadge = '';
+    if(isExpired){
+      const days = Math.floor((new Date(now)-new Date(p.expiry))/(86400000));
+      expiryBadge = `<span style="display:inline-flex;align-items:center;gap:4px;background:var(--red);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px;">⚠️ 期限切れ ${days}日超過</span>`;
+    } else if(isWarn){
+      const days = Math.floor((new Date(p.expiry)-new Date(now))/(86400000));
+      expiryBadge = `<span style="display:inline-flex;align-items:center;gap:4px;background:var(--orange);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px;">⏰ 期限まで${days}日</span>`;
+    }
+
+    return `
+    <div class="item-card" id="pcard-${p.id}" style="${cardBorder}">
       <div class="item-head">
-        <div>
+        <div style="flex:1;">
           <div class="item-name">${esc(p.name)}</div>
           <div class="item-sub">仕入先：${esc(vMap[p.vendorId]||'—')}</div>
+          ${expiryBadge ? `<div style="margin-top:5px;">${expiryBadge}</div>` : ''}
         </div>
-        <div>
-          <div class="item-stock" style="color:${p.stock<=p.minStock?'var(--red)':'var(--green-dk)'}">${p.stock}点</div>
-          ${p.stock<=p.minStock?'<span class="tag tag-low">在庫少</span>':''}
+        <div style="text-align:right;min-width:52px;">
+          <div class="item-stock" style="color:${isLow?'var(--red)':'var(--green-dk)'}">${p.stock}点</div>
+          ${isLow?'<span class="tag tag-low">在庫少</span>':''}
         </div>
       </div>
       ${p.photos&&p.photos.length?`<div class="item-photo-row">${p.photos.map((src,i)=>`<img src="${src}" alt="商品写真${i+1}" onclick="viewProductPhoto('${p.id}',${i})" />`).join('')}</div>`:''}
@@ -680,7 +711,7 @@ function renderProducts(){
         <div>仕入値：${fmtYen(p.costPrice)}</div>
         <div>売値：${fmtYen(p.sellPrice)}</div>
         <div>最低在庫：${p.minStock}点</div>
-        <div>${p.expiry?`期限：<span style="color:${p.expiry<now?'var(--red)':(p.expiry<warnStr?'var(--orange)':'var(--text2)')}">${p.expiry}</span>`:'期限：なし'}</div>
+        <div>${p.expiry?`期限：<span style="font-weight:700;color:${isExpired?'var(--red)':isWarn?'var(--orange)':'var(--text2)'}">${p.expiry}</span>`:'期限：なし'}</div>
       </div>
       <div class="row-btns">
         <button class="btn-edit" onclick="toggleInlineEdit('${p.id}')">✏️ 編集</button>
@@ -707,10 +738,11 @@ function renderProducts(){
           <button class="btn-edit" onclick="toggleInlineEdit('${p.id}')">キャンセル</button>
         </div>
       </div>
-    </div>`).join('') || '<div class="empty-msg">商品が登録されていません</div>';
+    </div>`;
+  }).join('') || '<div class="empty-msg">商品が登録されていません</div>';
 
   // 業者セレクトの値をセット（innerHTML後に設定）
-  products.forEach(p=>{
+  sorted.forEach(p=>{
     const sel = document.getElementById(`pe-vendor-${p.id}`);
     if(sel) sel.value = p.vendorId||'';
   });
