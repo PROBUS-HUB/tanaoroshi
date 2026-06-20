@@ -174,22 +174,28 @@ button{-webkit-tap-highlight-color:rgba(24,95,165,.15);touch-action:manipulation
     <div class="lock-title">棚卸し管理台帳</div>
     <div class="lock-desc">初めてのご利用です。ログイン用のIDとパスワードを設定してください。</div>
     <div class="lock-card">
-      <p class="card-label">ユーザーID</p>
-      <input type="text" id="setup-uid" class="form-input" placeholder="例：tanaka" style="margin-bottom:12px;" />
-      <p class="card-label">パスワード</p>
-      <div class="pw-wrap">
-        <input type="password" id="setup-pw" class="form-input" placeholder="6文字以上で入力" />
-        <button class="pw-toggle" onclick="togglePw('setup-pw',this)">👁️</button>
-      </div>
-      <p class="card-label">パスワード（確認）</p>
-      <div class="pw-wrap">
-        <input type="password" id="setup-pw2" class="form-input" placeholder="もう一度入力" />
-        <button class="pw-toggle" onclick="togglePw('setup-pw2',this)">👁️</button>
-      </div>
-      <p class="error-msg" id="setup-error"></p>
-      <button class="btn-primary" onclick="doSetup()">この内容で設定する</button>
+      <form id="setup-form" autocomplete="on" onsubmit="event.preventDefault(); doSetup();">
+        <p class="card-label">ユーザーID</p>
+        <input type="text" id="setup-uid" name="username" autocomplete="username" class="form-input" placeholder="例：tanaka" style="margin-bottom:12px;" />
+        <p class="card-label">パスワード</p>
+        <div class="pw-wrap">
+          <input type="password" id="setup-pw" name="new-password" autocomplete="new-password" class="form-input" placeholder="6文字以上で入力" />
+          <button type="button" class="pw-toggle" onclick="togglePw('setup-pw',this)">👁️</button>
+        </div>
+        <p class="card-label">パスワード（確認）</p>
+        <div class="pw-wrap">
+          <input type="password" id="setup-pw2" name="new-password-confirm" autocomplete="new-password" class="form-input" placeholder="もう一度入力" />
+          <button type="button" class="pw-toggle" onclick="togglePw('setup-pw2',this)">👁️</button>
+        </div>
+        <p class="error-msg" id="setup-error"></p>
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:14px;font-size:13px;color:var(--text2);cursor:pointer;">
+          <input type="checkbox" id="setup-remember" checked style="width:18px;height:18px;accent-color:var(--blue);" />
+          この端末でパスワードを記憶する
+        </label>
+        <button type="submit" class="btn-primary">この内容で設定する</button>
+      </form>
     </div>
-    <p style="font-size:11px;color:var(--text3);margin-top:14px;line-height:1.7;">設定したID・パスワードはこの端末のブラウザに保存されます。忘れないようにメモしておいてください。</p>
+    <p style="font-size:11px;color:var(--text3);margin-top:14px;line-height:1.7;">設定したID・パスワードはこの端末のブラウザに保存されます。確定後、ブラウザから「パスワードを保存しますか？」と表示されたら「保存」を選ぶと次回から自動入力されます。</p>
   </div>
 </div>
 
@@ -200,15 +206,21 @@ button{-webkit-tap-highlight-color:rgba(24,95,165,.15);touch-action:manipulation
     <div class="lock-title">棚卸し管理台帳</div>
     <div class="lock-desc">IDとパスワードを入力してログインしてください</div>
     <div class="lock-card">
-      <p class="card-label">ユーザーID</p>
-      <input type="text" id="login-uid" class="form-input" placeholder="ユーザーID" style="margin-bottom:12px;" onkeydown="if(event.key==='Enter')document.getElementById('login-pw').focus()" />
-      <p class="card-label">パスワード</p>
-      <div class="pw-wrap">
-        <input type="password" id="login-pw" class="form-input" placeholder="パスワード" onkeydown="if(event.key==='Enter')doLogin()" />
-        <button class="pw-toggle" onclick="togglePw('login-pw',this)">👁️</button>
-      </div>
-      <p class="error-msg" id="login-error"></p>
-      <button class="btn-primary" onclick="doLogin()">ログイン</button>
+      <form id="login-form" autocomplete="on" onsubmit="event.preventDefault(); doLogin();">
+        <p class="card-label">ユーザーID</p>
+        <input type="text" id="login-uid" name="username" autocomplete="username" class="form-input" placeholder="ユーザーID" style="margin-bottom:12px;" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('login-pw').focus();}" />
+        <p class="card-label">パスワード</p>
+        <div class="pw-wrap">
+          <input type="password" id="login-pw" name="current-password" autocomplete="current-password" class="form-input" placeholder="パスワード" />
+          <button type="button" class="pw-toggle" onclick="togglePw('login-pw',this)">👁️</button>
+        </div>
+        <p class="error-msg" id="login-error"></p>
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:14px;font-size:13px;color:var(--text2);cursor:pointer;">
+          <input type="checkbox" id="login-remember" style="width:18px;height:18px;accent-color:var(--blue);" />
+          この端末でパスワードを記憶する
+        </label>
+        <button type="submit" class="btn-primary">ログイン</button>
+      </form>
       <button class="btn-edit" style="width:100%;" onclick="showResetConfirm()">IDまたはパスワードを忘れた場合</button>
     </div>
   </div>
@@ -408,6 +420,7 @@ const KEY_AUTH     = 'tanaoroshi_auth';
 const KEY_PRODUCTS = 'tanaoroshi_products';
 const KEY_VENDORS  = 'tanaoroshi_vendors';
 const KEY_LOGS     = 'tanaoroshi_logs';
+const KEY_REMEMBER = 'tanaoroshi_remember';
 
 let auth = null;
 let products = [];
@@ -548,6 +561,7 @@ function doSetup(){
 function doLogin(){
   const uidVal = document.getElementById('login-uid').value.trim();
   const pw  = document.getElementById('login-pw').value;
+  const remember = document.getElementById('login-remember').checked;
   const err = document.getElementById('login-error');
   if(!uidVal || !pw){ err.textContent='IDとパスワードを入力してください'; return; }
   if(!auth || uidVal!==auth.uid || simpleHash(pw)!==auth.pwHash){
@@ -556,13 +570,30 @@ function doLogin(){
   }
   err.textContent='';
   sessionStorage.setItem('tanaoroshi_session', '1');
+  if(remember){
+    localStorage.setItem(KEY_REMEMBER, '1');
+  } else {
+    localStorage.removeItem(KEY_REMEMBER);
+  }
   showMainScreen();
 }
 
 function doLogout(){
-  if(!confirm('ログアウトしますか？')) return;
+  const remembered = localStorage.getItem(KEY_REMEMBER)==='1';
+  if(remembered){
+    const wantsForget = confirm('ログアウトしますか？\n「OK」でこの端末の記憶も解除されます（次回パスワード入力が必要）。\n「キャンセル」でログアウトを中止します。');
+    if(!wantsForget) return;
+    localStorage.removeItem(KEY_REMEMBER);
+  } else {
+    if(!confirm('ログアウトしますか？')) return;
+  }
   sessionStorage.removeItem('tanaoroshi_session');
   showLoginScreen();
+}
+
+function forgetThisDevice(){
+  localStorage.removeItem(KEY_REMEMBER);
+  alert('この端末の記憶を解除しました。次回からパスワード入力が必要です。');
 }
 
 function showResetConfirm(){ document.getElementById('reset-modal').style.display='flex'; }
@@ -570,6 +601,7 @@ function closeResetModal(){ document.getElementById('reset-modal').style.display
 function resetCredentials(){
   auth = null;
   localStorage.removeItem(KEY_AUTH);
+  localStorage.removeItem(KEY_REMEMBER);
   closeResetModal();
   showSetupScreen();
 }
@@ -583,9 +615,10 @@ function showLoginScreen(){
   document.getElementById('setup-screen').style.display='none';
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('main-screen').style.display='none';
-  document.getElementById('login-uid').value='';
+  document.getElementById('login-uid').value = (auth && auth.uid) ? auth.uid : '';
   document.getElementById('login-pw').value='';
   document.getElementById('login-error').textContent='';
+  document.getElementById('login-remember').checked = localStorage.getItem(KEY_REMEMBER)==='1';
 }
 function showMainScreen(){
   document.getElementById('setup-screen').style.display='none';
@@ -1253,6 +1286,10 @@ function init(){
     return;
   }
   if(sessionStorage.getItem('tanaoroshi_session')==='1'){
+    showMainScreen();
+  } else if(localStorage.getItem(KEY_REMEMBER)==='1'){
+    // この端末は記憶済み：パスワード再入力なしでログイン
+    sessionStorage.setItem('tanaoroshi_session', '1');
     showMainScreen();
   } else {
     showLoginScreen();
