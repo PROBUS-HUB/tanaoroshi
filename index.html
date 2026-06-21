@@ -176,7 +176,10 @@ button{-webkit-tap-highlight-color:rgba(24,95,165,.15);touch-action:manipulation
     <div class="lock-card">
       <form id="setup-form" autocomplete="on" onsubmit="event.preventDefault(); doSetup();">
         <p class="card-label">ユーザーID</p>
-        <input type="text" id="setup-uid" name="username" autocomplete="username" class="form-input" placeholder="例：tanaka" style="margin-bottom:12px;" />
+        <div class="pw-wrap" style="margin-bottom:12px;">
+          <input type="password" id="setup-uid" name="username" autocomplete="username" class="form-input" placeholder="例：tanaka" />
+          <button type="button" class="pw-toggle" onclick="togglePw('setup-uid',this)">👁️</button>
+        </div>
         <p class="card-label">パスワード</p>
         <div class="pw-wrap">
           <input type="password" id="setup-pw" name="new-password" autocomplete="new-password" class="form-input" placeholder="6文字以上で入力" />
@@ -208,7 +211,10 @@ button{-webkit-tap-highlight-color:rgba(24,95,165,.15);touch-action:manipulation
     <div class="lock-card">
       <form id="login-form" autocomplete="on" onsubmit="event.preventDefault(); doLogin();">
         <p class="card-label">ユーザーID</p>
-        <input type="text" id="login-uid" name="username" autocomplete="username" class="form-input" placeholder="ユーザーID" style="margin-bottom:12px;" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('login-pw').focus();}" />
+        <div class="pw-wrap" style="margin-bottom:12px;">
+          <input type="password" id="login-uid" name="username" autocomplete="username" class="form-input" placeholder="ユーザーID" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('login-pw').focus();}" />
+          <button type="button" class="pw-toggle" onclick="togglePw('login-uid',this)">👁️</button>
+        </div>
         <p class="card-label">パスワード</p>
         <div class="pw-wrap">
           <input type="password" id="login-pw" name="current-password" autocomplete="current-password" class="form-input" placeholder="パスワード" />
